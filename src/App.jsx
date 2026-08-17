@@ -556,6 +556,308 @@ function formatTanggal(tanggal) {
   return `${parseInt(day, 10)} ${nama} ${year}`;
 }
 
+function VerifikatorLoginModal({ onClose, onLogin }) {
+  const [nama, setNama] = useState("");
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (!nama.trim()) {
+      setError("Isi nama dulu");
+      return;
+    }
+    if (pin.trim().length !== 4) {
+      setError("PIN harus 4 digit");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    try {
+      const data = await apiPost("verifikatorLogin", { nama: nama.trim(), pin });
+      onLogin(data.nama);
+    } catch (err) {
+      setError(err.message || "Nama atau PIN salah");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <div className="absolute inset-0 bg-teal-800 bg-opacity-40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-sm bg-stone-50 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="border-b border-stone-200 px-6 py-4 flex items-center justify-between">
+          <div>
+            <div className="text-xs font-semibold tracking-widest uppercase text-teal-700">
+              Login Verifikator
+            </div>
+            <h2
+              className="text-xl font-semibold text-teal-900"
+              style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+            >
+              Bagian Organisasi
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:bg-teal-50 transition-colors"
+            aria-label="Tutup"
+          >
+            <X size={16} strokeWidth={2.2} />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Nama</label>
+            <input
+              type="text"
+              value={nama}
+              onChange={(e) => {
+                setNama(e.target.value);
+                setError("");
+              }}
+              placeholder="Nama verifikator"
+              className="w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-sm text-teal-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-800 focus:ring-opacity-30 focus:border-teal-800"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">PIN</label>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="••••"
+              className="w-28 rounded-md border border-stone-200 bg-white px-3 py-2.5 text-sm tracking-widest text-center text-teal-900 focus:outline-none focus:ring-2 focus:ring-teal-800 focus:ring-opacity-30 focus:border-teal-800"
+            />
+          </div>
+
+          {error && <p className="text-xs text-red-600">{error}</p>}
+
+          <div className="pt-2 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-sm font-medium text-gray-500 px-4 py-2.5 hover:text-gray-700 transition-colors"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-teal-800 rounded-md px-4 py-2.5 hover:bg-teal-700 transition-colors disabled:opacity-50"
+            >
+              <ShieldCheck size={14} strokeWidth={2.2} />
+              {loading ? "Memeriksa…" : "Masuk"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function VerifikasiCard({ sop, onSelesai }) {
+  const [catatan, setCatatan] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  const kirim = async (statusVerifikasi) => {
+    if (statusVerifikasi === "Revisi" && !catatan.trim()) {
+      setError("Isi catatan dulu, biar OPD tau apa yang perlu diperbaiki");
+      return;
+    }
+    setError("");
+    setBusy(true);
+    try {
+      await apiPost("verifikasi", {
+        id_sop: sop.id,
+        status_verifikasi: statusVerifikasi,
+        catatan_verifikasi: catatan.trim(),
+      });
+      onSelesai();
+    } catch (err) {
+      setError(err.message || "Gagal mengirim, coba lagi.");
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="bg-white border border-stone-200 rounded-xl p-5">
+      <div className="flex items-center gap-2 text-xs tracking-wider uppercase text-teal-800 font-semibold mb-1.5">
+        <span className="font-mono tracking-normal text-xs bg-teal-50 border border-stone-200 rounded px-1.5 py-0.5 text-teal-900">
+          {sop.nomor}
+        </span>
+        <span className="text-stone-300">·</span>
+        <span className="normal-case font-medium text-gray-500 flex items-center gap-1">
+          <Building2 size={12} strokeWidth={2} />
+          {sop.opd}
+        </span>
+      </div>
+      <h3
+        className="text-base leading-snug font-semibold text-teal-900 mb-3"
+        style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+      >
+        {sop.judul}
+      </h3>
+
+      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs mb-4">
+        <div>
+          <dt className="text-stone-400">Bidang/Bagian</dt>
+          <dd className="text-gray-700 font-medium">{sop.bidang}</dd>
+        </div>
+        <div>
+          <dt className="text-stone-400">Disahkan oleh</dt>
+          <dd className="text-gray-700 font-medium">{sop.disahkanOleh}</dd>
+        </div>
+        <div>
+          <dt className="text-stone-400">Tgl Efektif</dt>
+          <dd className="text-gray-700 font-medium">{formatTanggal(sop.tglEfektif)}</dd>
+        </div>
+        <div>
+          <dt className="text-stone-400">Status</dt>
+          <dd className="text-gray-700 font-medium">{sop.status}</dd>
+        </div>
+      </dl>
+
+      <a
+        href={sop.linkDrive}
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-900 border border-teal-800 rounded-md px-3 py-1.5 hover:bg-teal-50 transition-colors mb-4"
+      >
+        <Eye size={12} strokeWidth={2.2} />
+        Lihat PDF SOP
+      </a>
+
+      <div>
+        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+          Catatan <span className="text-stone-400 font-normal">(wajib kalau minta revisi)</span>
+        </label>
+        <textarea
+          rows={2}
+          value={catatan}
+          onChange={(e) => setCatatan(e.target.value)}
+          placeholder="cth. Link Drive belum bisa diakses publik…"
+          className="w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-sm text-teal-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-800 focus:ring-opacity-30 focus:border-teal-800 resize-none"
+        />
+      </div>
+
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+
+      <div className="mt-3 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => kirim("Revisi")}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 border border-amber-400 rounded-md px-4 py-2 hover:bg-amber-50 transition-colors disabled:opacity-50"
+        >
+          <History size={14} strokeWidth={2.2} />
+          Minta Revisi
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => kirim("Terverifikasi")}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-teal-800 rounded-md px-4 py-2 hover:bg-teal-700 transition-colors disabled:opacity-50"
+        >
+          <CheckCircle2 size={14} strokeWidth={2.2} />
+          Verifikasi
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function VerifikasiPage({ verifikatorName, onLogout, onBack }) {
+  const [pending, setPending] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiGet("sop", { status_verifikasi: "Menunggu" });
+      setPending(data.map(mapSopFromApi));
+    } catch (err) {
+      setError(err.message || "Gagal memuat data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-stone-50">
+      <div className="bg-teal-900">
+        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
+          <div>
+            <div className="text-xs font-semibold tracking-widest uppercase text-teal-200">
+              Bagian Organisasi
+            </div>
+            <h1 className="text-xl font-bold text-white leading-none mt-1">Verifikasi SOP</h1>
+            <p className="text-xs text-teal-200 mt-1">Masuk sebagai {verifikatorName}</p>
+          </div>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <button
+              onClick={onLogout}
+              className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 transition-colors"
+            >
+              Keluar
+            </button>
+            <button
+              onClick={onBack}
+              className="text-xs font-medium text-teal-100 hover:text-white transition-colors"
+            >
+              ← Ke portal publik
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-gray-500">
+            <strong className="text-teal-900">{pending.length}</strong> SOP menunggu verifikasi
+          </p>
+          <button
+            onClick={load}
+            className="text-xs font-semibold text-teal-800 border border-teal-800 rounded-md px-3 py-1.5 hover:bg-teal-50 transition-colors"
+          >
+            Muat ulang
+          </button>
+        </div>
+
+        {loading && <p className="text-sm text-gray-500">Memuat…</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        {!loading && pending.length === 0 && !error && (
+          <div className="text-center py-20 border border-dashed border-stone-200 rounded-md">
+            <CheckCircle2 size={28} strokeWidth={1.5} className="mx-auto text-teal-100 mb-3" />
+            <p className="text-gray-500 text-sm">Semua SOP sudah diverifikasi. Mantap!</p>
+          </div>
+        )}
+
+        <div className="grid gap-4">
+          {pending.map((sop) => (
+            <VerifikasiCard key={sop.id} sop={sop} onSelesai={load} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 function SopFormPage({ mode, initialSop, opd, onBack }) {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -876,9 +1178,13 @@ export default function SopPortal() {
   // OPD yang sedang login sebagai operator: { id_opd, nama_opd, singkatan } | null (publik)
   const [loggedInOpd, setLoggedInOpd] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
-  // "list" | "detail" | "form"
+  // "list" | "detail" | "form" | "verifikasi"
   const [view, setView] = useState("list");
   const [detailSop, setDetailSop] = useState(null);
+
+  // Verifikator (Bagian Organisasi)
+  const [verifikatorName, setVerifikatorName] = useState(null);
+  const [showVerifikatorLogin, setShowVerifikatorLogin] = useState(false);
 
   // ---- Data dari backend Apps Script ----
   const [opdList, setOpdList] = useState([]);
@@ -937,6 +1243,15 @@ export default function SopPortal() {
     setLoggedInOpd(null);
     if (view !== "list") setView("list");
   };
+  const handleVerifikatorLogin = (nama) => {
+    setVerifikatorName(nama);
+    setShowVerifikatorLogin(false);
+    setView("verifikasi");
+  };
+  const handleVerifikatorLogout = () => {
+    setVerifikatorName(null);
+    setView("list");
+  };
 
   const results = useMemo(() => {
     return sopList.filter((s) => {
@@ -961,6 +1276,16 @@ export default function SopPortal() {
       { label: "Total OPD di Inhu", value: opdList.length, icon: Layers, color: "slate" },
     ];
   }, [sopList, opdList]);
+
+  if (view === "verifikasi" && verifikatorName) {
+    return (
+      <VerifikasiPage
+        verifikatorName={verifikatorName}
+        onLogout={handleVerifikatorLogout}
+        onBack={() => setView("list")}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 font-sans" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
@@ -1202,14 +1527,29 @@ export default function SopPortal() {
       )}
 
       <footer className="border-t border-stone-200 mt-8">
-        <div className="max-w-4xl mx-auto px-6 py-6 text-xs text-stone-400 flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-6 py-6 text-xs text-stone-400 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>Bagian Organisasi Sekretariat Daerah Kabupaten Indragiri Hulu</span>
-          <span>Data disinkronkan berkala dari pengajuan OPD</span>
+          <div className="flex items-center gap-3">
+            <span>Data disinkronkan berkala dari pengajuan OPD</span>
+            <button
+              onClick={() => setShowVerifikatorLogin(true)}
+              className="text-stone-400 hover:text-teal-800 underline transition-colors"
+            >
+              Login Verifikator
+            </button>
+          </div>
         </div>
       </footer>
 
       {showLogin && (
         <LoginModal opdList={opdList} onClose={() => setShowLogin(false)} onLogin={handleLogin} />
+      )}
+
+      {showVerifikatorLogin && (
+        <VerifikatorLoginModal
+          onClose={() => setShowVerifikatorLogin(false)}
+          onLogin={handleVerifikatorLogin}
+        />
       )}
     </div>
   );
