@@ -1510,13 +1510,15 @@ export default function SopPortal() {
       )}
 
       {view === "list" && (
-      <header className="relative overflow-hidden border-b border-stone-200">
-        <img
-          src="https://i.imgur.com/NTqvgbH.png"
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-teal-900 bg-opacity-80" />
+      <header className="relative border-b border-stone-200">
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            src="https://i.imgur.com/NTqvgbH.png"
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-teal-900 bg-opacity-80" />
+        </div>
         <div className="relative max-w-4xl mx-auto px-6 pt-10 pb-8">
           <h1
             className="text-3xl sm:text-4xl leading-none font-semibold text-white mb-2"
@@ -1534,7 +1536,7 @@ export default function SopPortal() {
             <Search
               size={17}
               strokeWidth={2.2}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-opacity-70"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white"
             />
             <input
               value={query}
@@ -1558,7 +1560,7 @@ export default function SopPortal() {
                   <ChevronDown size={14} strokeWidth={2.2} className="text-white text-opacity-70 ml-auto shrink-0" />
                 </button>
                 {opdOpen && (
-                  <div className="absolute z-10 mt-1.5 w-64 bg-white border border-stone-200 rounded-md shadow-lg py-1.5 max-h-64 overflow-auto">
+                  <div className="absolute z-10 mt-1.5 w-full bg-white border border-stone-200 rounded-md shadow-lg py-1.5 max-h-64 overflow-auto">
                     <button
                       onClick={() => {
                         setOpdFilter("");
