@@ -73,6 +73,7 @@ function mapSopFromApi(s) {
     status: s.status,
     linkDrive: s.link_drive,
     statusVerifikasi: s.status_verifikasi,
+    catatanVerifikasi: s.catatan_verifikasi,
     riwayat,
     diverifikasi: s.tgl_verifikasi || s.tgl_submit || "",
   };
@@ -774,6 +775,145 @@ function VerifikasiCard({ sop, onSelesai }) {
   );
 }
 
+const STATUS_BADGE = {
+  Menunggu: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", icon: History },
+  Terverifikasi: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", icon: CheckCircle2 },
+  Revisi: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", icon: ShieldAlert },
+};
+
+function StatusBadge({ status }) {
+  const s = STATUS_BADGE[status] || STATUS_BADGE.Menunggu;
+  const Icon = s.icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2.5 py-1 border ${s.bg} ${s.text} ${s.border}`}
+    >
+      <Icon size={12} strokeWidth={2.3} />
+      {status}
+    </span>
+  );
+}
+
+function SopSayaCard({ sop, onEdit, onRevisi }) {
+  return (
+    <div className="bg-white border border-stone-200 rounded-xl p-5">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="flex items-center gap-2 text-xs tracking-wider uppercase text-teal-800 font-semibold">
+          <span className="font-mono tracking-normal text-xs bg-teal-50 border border-stone-200 rounded px-1.5 py-0.5 text-teal-900">
+            {sop.nomor}
+          </span>
+        </div>
+        <StatusBadge status={sop.statusVerifikasi} />
+      </div>
+      <h3
+        className="text-base leading-snug font-semibold text-teal-900 mb-2"
+        style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+      >
+        {sop.judul}
+      </h3>
+
+      {sop.statusVerifikasi === "Revisi" && sop.catatanVerifikasi && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 mb-3">
+          <p className="text-xs font-semibold text-red-700 mb-1">Catatan dari Bagian Organisasi:</p>
+          <p className="text-xs text-red-700">{sop.catatanVerifikasi}</p>
+        </div>
+      )}
+
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onEdit}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-900 bg-white border border-stone-200 rounded-md px-3 py-1.5 hover:border-teal-800 transition-colors"
+        >
+          <Pencil size={12} strokeWidth={2} />
+          Edit
+        </button>
+        {sop.statusVerifikasi === "Terverifikasi" && (
+          <button
+            onClick={onRevisi}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-teal-800 rounded-md px-3 py-1.5 hover:bg-teal-700 transition-colors"
+          >
+            <History size={12} strokeWidth={2} />
+            Catat Revisi
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SopSayaPage({ opd, onBack, onEdit, onRevisi }) {
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiGet("sop", { id_opd: opd.id_opd });
+      setList(data.map(mapSopFromApi));
+    } catch (err) {
+      setError(err.message || "Gagal memuat data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const menunggu = list.filter((s) => s.statusVerifikasi === "Menunggu").length;
+  const revisi = list.filter((s) => s.statusVerifikasi === "Revisi").length;
+
+  return (
+    <div className="max-w-4xl mx-auto px-6 py-8">
+      <button
+        onClick={onBack}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-teal-800 transition-colors mb-5"
+      >
+        <ArrowLeft size={15} strokeWidth={2.2} />
+        Kembali ke pencarian
+      </button>
+
+      <div className="bg-teal-900 rounded-xl px-6 py-6 mb-5">
+        <div className="text-xs font-semibold tracking-widest uppercase text-teal-200 mb-2">
+          {opd.nama_opd}
+        </div>
+        <h1
+          className="text-2xl leading-snug font-bold text-white"
+          style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+        >
+          SOP Saya
+        </h1>
+        {(menunggu > 0 || revisi > 0) && (
+          <p className="text-sm text-teal-100 mt-2">
+            {menunggu > 0 && <>{menunggu} menunggu verifikasi</>}
+            {menunggu > 0 && revisi > 0 && " · "}
+            {revisi > 0 && <>{revisi} perlu direvisi</>}
+          </p>
+        )}
+      </div>
+
+      {loading && <p className="text-sm text-gray-500">Memuat…</p>}
+      {error && <p className="text-sm text-red-600">{error}</p>}
+
+      {!loading && list.length === 0 && !error && (
+        <div className="text-center py-20 border border-dashed border-stone-200 rounded-md">
+          <FileText size={28} strokeWidth={1.5} className="mx-auto text-teal-100 mb-3" />
+          <p className="text-gray-500 text-sm">Belum ada SOP yang diajukan OPD ini.</p>
+        </div>
+      )}
+
+      <div className="grid gap-3">
+        {list.map((sop) => (
+          <SopSayaCard key={sop.id} sop={sop} onEdit={() => onEdit(sop)} onRevisi={() => onRevisi(sop)} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function VerifikasiPage({ verifikatorName, onLogout, onBack }) {
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -843,7 +983,7 @@ function VerifikasiPage({ verifikatorName, onLogout, onBack }) {
         {!loading && pending.length === 0 && !error && (
           <div className="text-center py-20 border border-dashed border-stone-200 rounded-md">
             <CheckCircle2 size={28} strokeWidth={1.5} className="mx-auto text-teal-100 mb-3" />
-            <p className="text-gray-500 text-sm">Semua SOP sudah diverifikasi. Mantap!</p>
+            <p className="text-gray-500 text-sm">Tidak ada SOP yang menunggu verifikasi saat ini.</p>
           </div>
         )}
 
@@ -1180,6 +1320,8 @@ export default function SopPortal() {
   const [showLogin, setShowLogin] = useState(false);
   // "list" | "detail" | "form" | "verifikasi"
   const [view, setView] = useState("list");
+  // Halaman tujuan tombol "Kembali" di SopFormPage: "list" | "detail" | "sopsaya"
+  const [formOrigin, setFormOrigin] = useState("list");
   const [detailSop, setDetailSop] = useState(null);
 
   // Verifikator (Bagian Organisasi)
@@ -1221,18 +1363,21 @@ export default function SopPortal() {
   const openTambah = () => {
     setModalMode("tambah");
     setActiveSop(null);
+    setFormOrigin("list");
     setView("form");
   };
-  const openEdit = (sop) => {
+  const openEdit = (sop, origin = "detail") => {
     setModalMode("edit");
     setActiveSop(sop);
     setDetailSop(sop);
+    setFormOrigin(origin);
     setView("form");
   };
-  const openRevisi = (sop) => {
+  const openRevisi = (sop, origin = "detail") => {
     setModalMode("revisi");
     setActiveSop(sop);
     setDetailSop(sop);
+    setFormOrigin(origin);
     setView("form");
   };
   const handleLogin = (opd) => {
@@ -1305,20 +1450,23 @@ export default function SopPortal() {
             </div>
           </div>
           {loggedInOpd ? (
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-teal-900 bg-amber-400 rounded-full px-3 py-1.5 whitespace-nowrap">
-                  <ShieldCheck size={13} strokeWidth={2.3} />
-                  {loggedInOpd.nama_opd}
-                </span>
-                <button
-                  onClick={handleLogout}
-                  className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 whitespace-nowrap transition-colors"
-                >
-                  Keluar
-                </button>
-              </div>
-              <p className="text-xs text-teal-200">Hi, {loggedInOpd.nama_opd}!</p>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+              <span className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-900 bg-amber-400 rounded-full px-3 py-1.5 whitespace-nowrap">
+                <ShieldCheck size={13} strokeWidth={2.3} />
+                {loggedInOpd.nama_opd}
+              </span>
+              <button
+                onClick={() => setView("sopsaya")}
+                className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 whitespace-nowrap transition-colors"
+              >
+                SOP Saya
+              </button>
+              <button
+                onClick={handleLogout}
+                className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 whitespace-nowrap transition-colors"
+              >
+                Keluar
+              </button>
             </div>
           ) : (
             <button
@@ -1461,7 +1609,14 @@ export default function SopPortal() {
           mode={modalMode}
           initialSop={activeSop}
           opd={loggedInOpd}
-          onBack={() => setView("detail")}
+          onBack={() => setView(formOrigin)}
+        />
+      ) : view === "sopsaya" && loggedInOpd ? (
+        <SopSayaPage
+          opd={loggedInOpd}
+          onBack={() => setView("list")}
+          onEdit={(sop) => openEdit(sop, "sopsaya")}
+          onRevisi={(sop) => openRevisi(sop, "sopsaya")}
         />
       ) : (
         <>
