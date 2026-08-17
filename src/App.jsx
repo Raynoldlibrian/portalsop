@@ -143,9 +143,7 @@ function SopCard({ sop, onEdit, onRevisi, onOpen, canManage }) {
       onClick={onOpen}
       className="group relative bg-white border border-stone-200 rounded-xl overflow-hidden transition-shadow hover:shadow-lg cursor-pointer"
     >
-      {/* tab strip — catalog-card signature */}
-      <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-amber-500" />
-      <div className="pl-6 pr-5 py-5">
+      <div className="px-5 py-5">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs tracking-wider uppercase text-teal-800 font-semibold mb-1.5">
@@ -1409,6 +1407,17 @@ export default function SopPortal() {
     });
   }, [sopList, query, opdFilter]);
 
+  const PAGE_SIZE = 15;
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    setPage(1);
+  }, [query, opdFilter, sopList]);
+  const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
+  const pagedResults = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return results.slice(start, start + PAGE_SIZE);
+  }, [results, page]);
+
   const latest = useMemo(() => {
     return [...sopList].sort((a, b) => (a.diverifikasi < b.diverifikasi ? 1 : -1)).slice(0, 5);
   }, [sopList]);
@@ -1438,9 +1447,11 @@ export default function SopPortal() {
       <div className="bg-teal-900">
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="shrink-0 w-12 h-12 rounded-full bg-white flex items-center justify-center overflow-hidden">
-              <img src="https://i.imgur.com/jk45oWc.png" alt="Logo Kabupaten Indragiri Hulu" className="w-8 h-8 object-contain" />
-            </div>
+            <img
+              src="https://i.imgur.com/jk45oWc.png"
+              alt="Logo Kabupaten Indragiri Hulu"
+              className="shrink-0 w-12 h-12 object-contain"
+            />
             <div>
               <h1 className="text-xl font-bold text-white leading-none">Portal SOP</h1>
               <p className="text-sm text-teal-100 mt-1">Registri Standar Operasional Prosedur</p>
@@ -1507,10 +1518,6 @@ export default function SopPortal() {
         />
         <div className="absolute inset-0 bg-teal-900 bg-opacity-80" />
         <div className="relative max-w-4xl mx-auto px-6 pt-10 pb-8">
-          <div className="flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-amber-400 mb-2">
-            <FileText size={14} strokeWidth={2.3} />
-            Registri SOP
-          </div>
           <h1
             className="text-3xl sm:text-4xl leading-none font-semibold text-white mb-2"
             style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
@@ -1522,33 +1529,33 @@ export default function SopPortal() {
             Kabupaten Indragiri Hulu yang telah diverifikasi Bagian Organisasi.
           </p>
 
-          {/* Search bar */}
+          {/* Search bar — glassy */}
           <div className="relative">
             <Search
               size={17}
               strokeWidth={2.2}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-opacity-70"
             />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               type="text"
               placeholder="Cari judul atau nomor SOP…"
-              className="w-full pl-11 pr-4 py-3.5 rounded-md border border-stone-200 bg-stone-50 text-sm text-teal-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-2 focus:ring-teal-800 focus:ring-opacity-30 focus:border-teal-800 transition-all"
+              className="w-full pl-11 pr-4 py-3.5 rounded-md border border-white border-opacity-20 bg-white bg-opacity-10 backdrop-blur-md text-sm text-white placeholder-white placeholder-opacity-70 focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-40 focus:border-white focus:border-opacity-40 transition-all"
             />
           </div>
 
           {/* OPD filter dropdown + Ajukan SOP Baru */}
-          <div className="mt-3 flex items-center justify-between gap-2 flex-wrap">
+          <div className="mt-3 grid grid-cols-2 gap-3 items-start">
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="relative">
+              <div className="relative w-full">
                 <button
                   onClick={() => setOpdOpen((v) => !v)}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 border border-stone-200 rounded-md pl-3 pr-2.5 py-2 bg-white hover:border-teal-800 transition-colors"
+                  className="w-full inline-flex items-center gap-2 text-sm font-medium text-white border border-white border-opacity-20 rounded-md pl-3 pr-2.5 py-2 bg-white bg-opacity-10 backdrop-blur-md hover:bg-opacity-20 transition-colors"
                 >
-                  <Building2 size={14} strokeWidth={2.2} className="text-stone-400" />
-                  {opdFilter || "Semua OPD"}
-                  <ChevronDown size={14} strokeWidth={2.2} className="text-stone-400" />
+                  <Building2 size={14} strokeWidth={2.2} className="text-white text-opacity-70 shrink-0" />
+                  <span className="truncate">{opdFilter || "Semua OPD"}</span>
+                  <ChevronDown size={14} strokeWidth={2.2} className="text-white text-opacity-70 ml-auto shrink-0" />
                 </button>
                 {opdOpen && (
                   <div className="absolute z-10 mt-1.5 w-64 bg-white border border-stone-200 rounded-md shadow-lg py-1.5 max-h-64 overflow-auto">
@@ -1582,15 +1589,17 @@ export default function SopPortal() {
               )}
             </div>
 
-            {loggedInOpd && (
-              <button
-                onClick={openTambah}
-                className="inline-flex items-center gap-2 bg-teal-800 text-white font-semibold text-sm px-4 py-2 rounded-md hover:bg-teal-700 transition-colors"
-              >
-                <Plus size={16} />
-                Ajukan SOP Baru
-              </button>
-            )}
+            <div className="flex justify-end">
+              {loggedInOpd && (
+                <button
+                  onClick={openTambah}
+                  className="inline-flex items-center gap-2 bg-teal-800 text-white font-semibold text-sm px-4 py-2 rounded-md hover:bg-teal-700 transition-colors"
+                >
+                  <Plus size={16} />
+                  Ajukan SOP Baru
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -1664,18 +1673,52 @@ export default function SopPortal() {
                 <p className="text-stone-400 text-xs">Coba kata kunci lain atau ubah filter OPD.</p>
               </div>
             ) : (
-              <div className="grid gap-3">
-                {results.map((sop) => (
-                  <SopCard
-                    key={sop.id}
-                    sop={sop}
-                    onOpen={() => openDetail(sop)}
-                    onEdit={() => openEdit(sop)}
-                    onRevisi={() => openRevisi(sop)}
-                    canManage={loggedInOpd?.id_opd === sop.idOpd}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid gap-3">
+                  {pagedResults.map((sop) => (
+                    <SopCard
+                      key={sop.id}
+                      sop={sop}
+                      onOpen={() => openDetail(sop)}
+                      onEdit={() => openEdit(sop)}
+                      onRevisi={() => openRevisi(sop)}
+                      canManage={loggedInOpd?.id_opd === sop.idOpd}
+                    />
+                  ))}
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-1.5 mt-6">
+                    <button
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className="text-sm font-medium text-gray-700 border border-stone-200 rounded-md px-3 py-1.5 hover:border-teal-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      ← Sebelumnya
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setPage(n)}
+                        className={`w-8 h-8 text-sm font-medium rounded-md transition-colors ${
+                          n === page
+                            ? "bg-teal-800 text-white"
+                            : "text-gray-700 border border-stone-200 hover:border-teal-800"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className="text-sm font-medium text-gray-700 border border-stone-200 rounded-md px-3 py-1.5 hover:border-teal-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Selanjutnya →
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </main>
         </>
