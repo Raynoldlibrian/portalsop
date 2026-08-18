@@ -1515,7 +1515,7 @@ export default function SopPortal() {
           <img
             src="https://i.imgur.com/NTqvgbH.png"
             alt=""
-            className="w-80 sm:w-96 h-auto opacity-40"
+            className="w-full max-w-3xl h-auto opacity-40 scale-125"
             style={{ mixBlendMode: "multiply" }}
           />
         </div>
