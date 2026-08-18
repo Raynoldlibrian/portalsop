@@ -1512,8 +1512,8 @@ export default function SopPortal() {
       )}
 
       {view === "list" && (
-      <header className="relative border-b border-stone-200 bg-teal-900 overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center">
+      <header className="relative border-b border-stone-200 bg-teal-900">
+        <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
           <img
             src="https://i.imgur.com/NTqvgbH.png"
             alt=""
