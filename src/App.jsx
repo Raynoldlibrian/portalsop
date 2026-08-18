@@ -175,17 +175,22 @@ function SopCard({ sop, onEdit, onRevisi, onOpen, canManage }) {
             </dl>
           </div>
           <div className="shrink-0 flex items-start gap-1" onClick={(e) => e.stopPropagation()}>
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                onOpen();
-              }}
-              className="inline-flex items-center gap-1.5 rounded border border-teal-800 text-teal-900 text-xs font-semibold px-3 py-2 hover:bg-teal-700 hover:text-white transition-colors"
-            >
-              <Download size={13} strokeWidth={2.3} />
-              Lihat
-            </a>
+            {sop.linkDrive ? (
+              <a
+                href={sop.linkDrive}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 rounded border border-teal-800 text-teal-900 text-xs font-semibold px-3 py-2 hover:bg-teal-700 hover:text-white transition-colors"
+              >
+                <Download size={13} strokeWidth={2.3} />
+                Lihat
+              </a>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded border border-stone-200 text-stone-300 text-xs font-semibold px-3 py-2 cursor-not-allowed">
+                <Download size={13} strokeWidth={2.3} />
+                Lihat
+              </span>
+            )}
             {canManage && <CardMenu onEdit={onEdit} onRevisi={onRevisi} />}
           </div>
         </div>
