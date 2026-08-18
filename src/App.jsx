@@ -1461,23 +1461,25 @@ export default function SopPortal() {
             </div>
           </div>
           {loggedInOpd ? (
-            <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            <div className="flex flex-col items-end gap-2 shrink-0">
+              <div className="flex items-center gap-2 flex-wrap justify-end">
+                <button
+                  onClick={() => setView("sopsaya")}
+                  className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 whitespace-nowrap transition-colors"
+                >
+                  SOP Saya
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 whitespace-nowrap transition-colors"
+                >
+                  Keluar
+                </button>
+              </div>
               <span className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-900 bg-amber-400 rounded-full px-3 py-1.5 whitespace-nowrap">
                 <ShieldCheck size={13} strokeWidth={2.3} />
                 {loggedInOpd.nama_opd}
               </span>
-              <button
-                onClick={() => setView("sopsaya")}
-                className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 whitespace-nowrap transition-colors"
-              >
-                SOP Saya
-              </button>
-              <button
-                onClick={handleLogout}
-                className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 whitespace-nowrap transition-colors"
-              >
-                Keluar
-              </button>
             </div>
           ) : (
             <button
