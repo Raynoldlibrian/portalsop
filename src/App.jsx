@@ -362,10 +362,16 @@ const STAT_COLORS = {
   slate: { bg: "bg-stone-100", icon: "text-stone-600", value: "text-stone-800" },
 };
 
-function StatCard({ icon: Icon, label, value, color }) {
+function StatCard({ icon: Icon, label, value, color, onClick }) {
   const c = STAT_COLORS[color] || STAT_COLORS.blue;
+  const Tag = onClick ? "button" : "div";
   return (
-    <div className="flex flex-col items-start gap-2 bg-white border border-stone-200 rounded-xl px-3 py-3 sm:px-4 sm:py-4 min-w-0">
+    <Tag
+      onClick={onClick}
+      className={`flex flex-col items-start gap-2 bg-white border border-stone-200 rounded-xl px-3 py-3 sm:px-4 sm:py-4 min-w-0 text-left w-full ${
+        onClick ? "hover:border-teal-800 hover:shadow-md transition-all cursor-pointer" : ""
+      }`}
+    >
       <div className={`w-8 h-8 rounded-md ${c.bg} flex items-center justify-center`}>
         <Icon size={15} strokeWidth={2} className={c.icon} />
       </div>
@@ -378,6 +384,62 @@ function StatCard({ icon: Icon, label, value, color }) {
         </div>
         <div className="text-xs sm:text-xs leading-snug text-gray-500">{label}</div>
       </div>
+    </Tag>
+  );
+}
+
+function OpdListPage({ opdCounts, onBack, onSelectOpd }) {
+  return (
+    <div className="max-w-4xl mx-auto px-6 py-8">
+      <button
+        onClick={onBack}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-teal-800 transition-colors mb-5"
+      >
+        <ArrowLeft size={15} strokeWidth={2.2} />
+        Kembali ke pencarian
+      </button>
+
+      <div className="bg-teal-900 rounded-xl px-6 py-6 mb-5">
+        <div className="text-xs font-semibold tracking-widest uppercase text-teal-200 mb-2">
+          Registri SOP
+        </div>
+        <h1
+          className="text-2xl leading-snug font-bold text-white"
+          style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
+        >
+          OPD Berpartisipasi
+        </h1>
+        <p className="text-sm text-teal-100 mt-2">
+          {opdCounts.length} OPD sudah punya SOP terverifikasi di portal ini
+        </p>
+      </div>
+
+      {opdCounts.length === 0 ? (
+        <div className="text-center py-20 border border-dashed border-stone-200 rounded-md">
+          <Landmark size={28} strokeWidth={1.5} className="mx-auto text-teal-100 mb-3" />
+          <p className="text-gray-500 text-sm">Belum ada OPD dengan SOP terverifikasi.</p>
+        </div>
+      ) : (
+        <div className="grid gap-2">
+          {opdCounts.map((o) => (
+            <button
+              key={o.opd}
+              onClick={() => onSelectOpd(o.opd)}
+              className="w-full flex items-center justify-between gap-3 bg-white border border-stone-200 rounded-xl px-5 py-4 hover:border-teal-800 hover:shadow-md transition-all text-left"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-9 h-9 rounded-md bg-sky-50 flex items-center justify-center shrink-0">
+                  <Landmark size={16} strokeWidth={2} className="text-sky-700" />
+                </div>
+                <span className="text-sm font-semibold text-teal-900 truncate">{o.opd}</span>
+              </div>
+              <span className="shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 rounded-full px-2.5 py-1">
+                {o.count} SOP
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1422,14 +1484,23 @@ export default function SopPortal() {
     return [...sopList].sort((a, b) => (a.diverifikasi < b.diverifikasi ? 1 : -1)).slice(0, 5);
   }, [sopList]);
 
+  const opdCounts = useMemo(() => {
+    const map = {};
+    sopList.forEach((s) => {
+      map[s.opd] = (map[s.opd] || 0) + 1;
+    });
+    return Object.entries(map)
+      .map(([opd, count]) => ({ opd, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [sopList]);
+
   const stats = useMemo(() => {
-    const opdBerpartisipasi = new Set(sopList.map((s) => s.idOpd)).size;
     return [
       { label: "SOP Terverifikasi", value: sopList.length, icon: ClipboardList, color: "emerald" },
-      { label: "OPD Berpartisipasi", value: opdBerpartisipasi, icon: Landmark, color: "blue" },
+      { label: "OPD Berpartisipasi", value: opdCounts.length, icon: Landmark, color: "blue" },
       { label: "Total OPD di Inhu", value: opdList.length, icon: Layers, color: "slate" },
     ];
-  }, [sopList, opdList]);
+  }, [sopList, opdList, opdCounts]);
 
   if (view === "verifikasi" && verifikatorName) {
     return (
@@ -1631,13 +1702,26 @@ export default function SopPortal() {
           onEdit={(sop) => openEdit(sop, "sopsaya")}
           onRevisi={(sop) => openRevisi(sop, "sopsaya")}
         />
+      ) : view === "opdlist" ? (
+        <OpdListPage
+          opdCounts={opdCounts}
+          onBack={() => setView("list")}
+          onSelectOpd={(opd) => {
+            setOpdFilter(opd);
+            setView("list");
+          }}
+        />
       ) : (
         <>
           {/* Dashboard stats */}
           <section className="max-w-4xl mx-auto px-6 pt-8">
             <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {stats.map((s) => (
-                <StatCard key={s.label} {...s} />
+                <StatCard
+                  key={s.label}
+                  {...s}
+                  onClick={s.label === "OPD Berpartisipasi" ? () => setView("opdlist") : undefined}
+                />
               ))}
             </div>
           </section>
