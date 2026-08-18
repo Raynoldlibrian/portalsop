@@ -1510,14 +1510,14 @@ export default function SopPortal() {
       )}
 
       {view === "list" && (
-      <header className="relative border-b border-stone-200">
-        <div className="absolute inset-0 overflow-hidden">
+      <header className="relative border-b border-stone-200 bg-teal-900 overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center">
           <img
             src="https://i.imgur.com/NTqvgbH.png"
             alt=""
-            className="absolute inset-0 w-full h-full object-cover"
+            className="w-80 sm:w-96 h-auto opacity-40"
+            style={{ mixBlendMode: "multiply" }}
           />
-          <div className="absolute inset-0 bg-teal-900 bg-opacity-80" />
         </div>
         <div className="relative max-w-4xl mx-auto px-6 pt-10 pb-8">
           <h1
@@ -1536,7 +1536,7 @@ export default function SopPortal() {
             <Search
               size={17}
               strokeWidth={2.2}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white"
+              className="absolute z-10 left-4 top-1/2 -translate-y-1/2 text-white"
             />
             <input
               value={query}
@@ -1738,6 +1738,16 @@ export default function SopPortal() {
               Login Verifikator
             </button>
           </div>
+        </div>
+        <div className="max-w-4xl mx-auto px-6 pb-4 text-xs text-stone-300">
+          <a
+            href="https://freevectormaps.com/indonesia/ID-EPS-02-7001?ref=atr"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-teal-800 hover:underline transition-colors"
+          >
+            Peta latar oleh FreeVectorMaps.com
+          </a>
         </div>
       </footer>
 
