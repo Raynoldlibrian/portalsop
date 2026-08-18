@@ -283,22 +283,30 @@ function SopDetailPage({ sop, isOperator, onBack, onEdit, onRevisi }) {
           Dokumen SOP
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <a
-            href="#"
-            onClick={(e) => e.preventDefault()}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-teal-800 rounded-md px-4 py-2.5 hover:bg-teal-700 transition-colors"
-          >
-            <Eye size={14} strokeWidth={2.2} />
-            Lihat PDF
-          </a>
-          <a
-            href="#"
-            onClick={(e) => e.preventDefault()}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-900 border border-teal-800 rounded-md px-4 py-2.5 hover:bg-teal-50 transition-colors"
-          >
-            <Download size={14} strokeWidth={2.2} />
-            Unduh
-          </a>
+          {sop.linkDrive ? (
+            <>
+              <a
+                href={sop.linkDrive}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-teal-800 rounded-md px-4 py-2.5 hover:bg-teal-700 transition-colors"
+              >
+                <Eye size={14} strokeWidth={2.2} />
+                Lihat PDF
+              </a>
+              <a
+                href={sop.linkDrive}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-900 border border-teal-800 rounded-md px-4 py-2.5 hover:bg-teal-50 transition-colors"
+              >
+                <Download size={14} strokeWidth={2.2} />
+                Unduh
+              </a>
+            </>
+          ) : (
+            <p className="text-sm text-stone-400">Link dokumen belum tersedia.</p>
+          )}
         </div>
       </div>
 
