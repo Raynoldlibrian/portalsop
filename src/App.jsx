@@ -156,10 +156,11 @@ function SopCard({ sop, onEdit, onRevisi, onOpen, canManage }) {
                 {sop.opd}
               </span>
             </div>
-            <h3 className="text-lg leading-snug font-semibold text-teal-900 mb-3" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
+            <h3 className="text-lg leading-snug font-semibold text-teal-900 mb-2" style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}>
               {sop.judul}
             </h3>
-            <dl className="grid grid-cols-3 gap-x-4 gap-y-1 text-xs">
+            <BadgePerluDitinjau tglEfektif={sop.tglEfektif} />
+            <dl className="grid grid-cols-3 gap-x-4 gap-y-1 text-xs mt-2">
               <div>
                 <dt className="text-stone-400">Efektif</dt>
                 <dd className="text-gray-700 font-medium">{formatTanggal(sop.tglEfektif)}</dd>
@@ -268,6 +269,12 @@ function SopDetailPage({ sop, isOperator, onBack, onEdit, onRevisi }) {
             {berlaku ? <ShieldCheck size={12} strokeWidth={2.3} /> : <ShieldAlert size={12} strokeWidth={2.3} />}
             {sop.status}
           </span>
+          {perluDitinjau(sop.tglEfektif) && (
+            <span className="inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2.5 py-1 bg-amber-100 text-amber-800">
+              <History size={12} strokeWidth={2.3} />
+              Perlu ditinjau ulang ({Math.floor(tahunSejakEfektif(sop.tglEfektif))} tahun sejak efektif)
+            </span>
+          )}
         </div>
       </div>
 
@@ -373,6 +380,7 @@ const STAT_COLORS = {
   emerald: { bg: "bg-emerald-50", icon: "text-emerald-700", value: "text-emerald-800" },
   blue: { bg: "bg-sky-50", icon: "text-sky-700", value: "text-sky-800" },
   slate: { bg: "bg-stone-100", icon: "text-stone-600", value: "text-stone-800" },
+  amber: { bg: "bg-amber-50", icon: "text-amber-700", value: "text-amber-800" },
 };
 
 function StatCard({ icon: Icon, label, value, color, onClick }) {
@@ -630,6 +638,31 @@ function formatTanggal(tanggal) {
   return `${parseInt(day, 10)} ${nama} ${year}`;
 }
 
+// SOP dianggap perlu ditinjau ulang kalau tgl_efektif sudah lewat 2 tahun
+// (standar peninjauan ulang SOP AP sesuai Permenpan RB).
+function tahunSejakEfektif(tglEfektif) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(tglEfektif || "");
+  if (!m) return null;
+  const efektif = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const now = new Date();
+  return (now - efektif) / (1000 * 60 * 60 * 24 * 365.25);
+}
+function perluDitinjau(tglEfektif) {
+  const tahun = tahunSejakEfektif(tglEfektif);
+  return tahun !== null && tahun >= 2;
+}
+
+function BadgePerluDitinjau({ tglEfektif }) {
+  if (!perluDitinjau(tglEfektif)) return null;
+  const tahun = tahunSejakEfektif(tglEfektif);
+  return (
+    <span className="inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2.5 py-1 border bg-amber-50 text-amber-700 border-amber-200">
+      <History size={12} strokeWidth={2.3} />
+      Perlu ditinjau ({Math.floor(tahun)} thn)
+    </span>
+  );
+}
+
 function VerifikatorLoginModal({ onClose, onLogin }) {
   const [nama, setNama] = useState("");
   const [pin, setPin] = useState("");
@@ -884,15 +917,16 @@ function SopSayaCard({ sop, onEdit, onRevisi }) {
       >
         {sop.judul}
       </h3>
+      <BadgePerluDitinjau tglEfektif={sop.tglEfektif} />
 
       {sop.statusVerifikasi === "Revisi" && sop.catatanVerifikasi && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 mb-3">
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 mb-3 mt-2">
           <p className="text-xs font-semibold text-red-700 mb-1">Catatan dari Bagian Organisasi:</p>
           <p className="text-xs text-red-700">{sop.catatanVerifikasi}</p>
         </div>
       )}
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 mt-3">
         <button
           onClick={onEdit}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-900 bg-white border border-stone-200 rounded-md px-3 py-1.5 hover:border-teal-800 transition-colors"
@@ -1385,6 +1419,7 @@ function SopFormPage({ mode, initialSop, opd, onBack }) {
 export default function SopPortal() {
   const [query, setQuery] = useState("");
   const [opdFilter, setOpdFilter] = useState("");
+  const [onlyPerluDitinjau, setOnlyPerluDitinjau] = useState(false);
   const [opdOpen, setOpdOpen] = useState(false);
   const [modalMode, setModalMode] = useState("tambah");
   const [activeSop, setActiveSop] = useState(null);
@@ -1478,9 +1513,10 @@ export default function SopPortal() {
         s.judul.toLowerCase().includes(query.toLowerCase()) ||
         s.nomor.toLowerCase().includes(query.toLowerCase());
       const matchesOpd = opdFilter === "" || s.opd === opdFilter;
-      return matchesQuery && matchesOpd;
+      const matchesReview = !onlyPerluDitinjau || perluDitinjau(s.tglEfektif);
+      return matchesQuery && matchesOpd && matchesReview;
     });
-  }, [sopList, query, opdFilter]);
+  }, [sopList, query, opdFilter, onlyPerluDitinjau]);
 
   const PAGE_SIZE = 15;
   const [page, setPage] = useState(1);
@@ -1507,13 +1543,19 @@ export default function SopPortal() {
       .sort((a, b) => b.count - a.count);
   }, [sopList]);
 
+  const perluDitinjauCount = useMemo(
+    () => sopList.filter((s) => perluDitinjau(s.tglEfektif)).length,
+    [sopList]
+  );
+
   const stats = useMemo(() => {
     return [
       { label: "SOP Terverifikasi", value: sopList.length, icon: ClipboardList, color: "emerald" },
       { label: "OPD Berpartisipasi", value: opdCounts.length, icon: Landmark, color: "blue" },
       { label: "Total OPD di Inhu", value: opdList.length, icon: Layers, color: "slate" },
+      { label: "Perlu Ditinjau", value: perluDitinjauCount, icon: History, color: "amber" },
     ];
-  }, [sopList, opdList, opdCounts]);
+  }, [sopList, opdList, opdCounts, perluDitinjauCount]);
 
   if (view === "verifikasi" && verifikatorName) {
     return (
@@ -1728,12 +1770,18 @@ export default function SopPortal() {
         <>
           {/* Dashboard stats */}
           <section className="max-w-4xl mx-auto px-6 pt-8">
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               {stats.map((s) => (
                 <StatCard
                   key={s.label}
                   {...s}
-                  onClick={s.label === "OPD Berpartisipasi" ? () => setView("opdlist") : undefined}
+                  onClick={
+                    s.label === "OPD Berpartisipasi"
+                      ? () => setView("opdlist")
+                      : s.label === "Perlu Ditinjau"
+                      ? () => setOnlyPerluDitinjau(true)
+                      : undefined
+                  }
                 />
               ))}
             </div>
@@ -1758,13 +1806,16 @@ export default function SopPortal() {
               <ClipboardList size={15} strokeWidth={2.2} className="text-teal-900" />
               <h2 className="text-sm font-semibold text-teal-900">Jelajahi Semua SOP</h2>
             </div>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <CalendarCheck size={14} strokeWidth={2.2} className="text-green-700" />
                 <span>
                   <strong className="text-teal-900">{results.length}</strong> SOP terverifikasi ditemukan
                 </span>
               </div>
+              {onlyPerluDitinjau && (
+                <Chip onRemove={() => setOnlyPerluDitinjau(false)}>Perlu ditinjau</Chip>
+              )}
             </div>
 
             {results.length === 0 ? (
