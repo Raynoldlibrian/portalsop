@@ -1420,6 +1420,10 @@ export default function SopPortal() {
   const [query, setQuery] = useState("");
   const [opdFilter, setOpdFilter] = useState("");
   const [onlyPerluDitinjau, setOnlyPerluDitinjau] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [tglDari, setTglDari] = useState("");
+  const [tglSampai, setTglSampai] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [opdOpen, setOpdOpen] = useState(false);
   const [modalMode, setModalMode] = useState("tambah");
   const [activeSop, setActiveSop] = useState(null);
@@ -1507,22 +1511,30 @@ export default function SopPortal() {
   };
 
   const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
     return sopList.filter((s) => {
       const matchesQuery =
-        query.trim() === "" ||
-        s.judul.toLowerCase().includes(query.toLowerCase()) ||
-        s.nomor.toLowerCase().includes(query.toLowerCase());
+        q === "" ||
+        s.judul.toLowerCase().includes(q) ||
+        s.nomor.toLowerCase().includes(q) ||
+        (s.bidang || "").toLowerCase().includes(q) ||
+        (s.seksi || "").toLowerCase().includes(q);
       const matchesOpd = opdFilter === "" || s.opd === opdFilter;
       const matchesReview = !onlyPerluDitinjau || perluDitinjau(s.tglEfektif);
-      return matchesQuery && matchesOpd && matchesReview;
+      const matchesStatus = statusFilter === "" || s.status === statusFilter;
+      const matchesDari = tglDari === "" || (s.tglEfektif && s.tglEfektif >= tglDari);
+      const matchesSampai = tglSampai === "" || (s.tglEfektif && s.tglEfektif <= tglSampai);
+      return (
+        matchesQuery && matchesOpd && matchesReview && matchesStatus && matchesDari && matchesSampai
+      );
     });
-  }, [sopList, query, opdFilter, onlyPerluDitinjau]);
+  }, [sopList, query, opdFilter, onlyPerluDitinjau, statusFilter, tglDari, tglSampai]);
 
   const PAGE_SIZE = 15;
   const [page, setPage] = useState(1);
   useEffect(() => {
     setPage(1);
-  }, [query, opdFilter, sopList]);
+  }, [query, opdFilter, sopList, onlyPerluDitinjau, statusFilter, tglDari, tglSampai]);
   const totalPages = Math.max(1, Math.ceil(results.length / PAGE_SIZE));
   const pagedResults = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -1717,6 +1729,12 @@ export default function SopPortal() {
               {opdFilter && (
                 <Chip onRemove={() => setOpdFilter("")}>{opdFilter}</Chip>
               )}
+              <button
+                onClick={() => setShowAdvanced((v) => !v)}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-100 hover:text-white underline transition-colors"
+              >
+                Filter lanjutan {showAdvanced ? "▲" : "▼"}
+              </button>
             </div>
 
             <div className="flex justify-end">
@@ -1730,6 +1748,41 @@ export default function SopPortal() {
                 </button>
               )}
             </div>
+
+            {showAdvanced && (
+              <div className="col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-3 mt-1 p-3 rounded-md border border-white border-opacity-20 bg-white bg-opacity-10 backdrop-blur-md">
+                <div>
+                  <label className="block text-xs font-medium text-teal-100 mb-1.5">Status</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="w-full rounded-md border border-white border-opacity-20 bg-white bg-opacity-10 px-2.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-40"
+                  >
+                    <option value="" className="text-teal-900">Semua Status</option>
+                    <option value="Berlaku" className="text-teal-900">Berlaku</option>
+                    <option value="Tidak Berlaku" className="text-teal-900">Tidak Berlaku</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-teal-100 mb-1.5">Efektif dari</label>
+                  <input
+                    type="date"
+                    value={tglDari}
+                    onChange={(e) => setTglDari(e.target.value)}
+                    className="w-full rounded-md border border-white border-opacity-20 bg-white bg-opacity-10 px-2.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-40"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-teal-100 mb-1.5">Efektif sampai</label>
+                  <input
+                    type="date"
+                    value={tglSampai}
+                    onChange={(e) => setTglSampai(e.target.value)}
+                    className="w-full rounded-md border border-white border-opacity-20 bg-white bg-opacity-10 px-2.5 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-40"
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -1813,9 +1866,20 @@ export default function SopPortal() {
                   <strong className="text-teal-900">{results.length}</strong> SOP terverifikasi ditemukan
                 </span>
               </div>
-              {onlyPerluDitinjau && (
-                <Chip onRemove={() => setOnlyPerluDitinjau(false)}>Perlu ditinjau</Chip>
-              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {onlyPerluDitinjau && (
+                  <Chip onRemove={() => setOnlyPerluDitinjau(false)}>Perlu ditinjau</Chip>
+                )}
+                {statusFilter && (
+                  <Chip onRemove={() => setStatusFilter("")}>{statusFilter}</Chip>
+                )}
+                {tglDari && (
+                  <Chip onRemove={() => setTglDari("")}>Dari {formatTanggal(tglDari)}</Chip>
+                )}
+                {tglSampai && (
+                  <Chip onRemove={() => setTglSampai("")}>Sampai {formatTanggal(tglSampai)}</Chip>
+                )}
+              </div>
             </div>
 
             {results.length === 0 ? (
