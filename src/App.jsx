@@ -23,7 +23,10 @@ import {
   ShieldCheck,
   ShieldAlert,
   BookOpen,
+  FileSpreadsheet,
+  Printer,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 // ==================== KONFIGURASI API ====================
 const API_BASE_URL =
@@ -638,6 +641,33 @@ function formatTanggal(tanggal) {
   return `${parseInt(day, 10)} ${nama} ${year}`;
 }
 
+// Unduh daftar SOP yang lagi tampil (sudah kefilter) sebagai file Excel.
+function exportExcel(sopArray) {
+  const rows = sopArray.map((s) => ({
+    "Nomor SOP": s.nomor,
+    "Judul SOP": s.judul,
+    OPD: s.opd,
+    "Bidang/Bagian": s.bidang,
+    "Seksi/Subbid/Subbag": s.seksi,
+    "Tanggal Pembuatan": formatTanggal(s.tglPembuatan),
+    "Tanggal Revisi": formatTanggal(s.tglRevisi),
+    "Tanggal Efektif": formatTanggal(s.tglEfektif),
+    "Disahkan Oleh": s.disahkanOleh,
+    Status: s.status,
+    "Perlu Ditinjau": perluDitinjau(s.tglEfektif) ? "Ya" : "Tidak",
+    "Link Drive": s.linkDrive,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [
+    { wch: 14 }, { wch: 40 }, { wch: 22 }, { wch: 22 }, { wch: 22 },
+    { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 40 },
+  ];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Rekap SOP");
+  const tanggal = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, `Rekap-SOP-Inhu-${tanggal}.xlsx`);
+}
+
 // SOP dianggap perlu ditinjau ulang kalau tgl_efektif sudah lewat 2 tahun
 // (standar peninjauan ulang SOP AP sesuai Permenpan RB).
 function tahunSejakEfektif(tglEfektif) {
@@ -769,7 +799,7 @@ function VerifikatorLoginModal({ onClose, onLogin }) {
   );
 }
 
-function VerifikasiCard({ sop, onSelesai }) {
+function VerifikasiCard({ sop, verifikatorName, onSelesai }) {
   const [catatan, setCatatan] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -786,6 +816,7 @@ function VerifikasiCard({ sop, onSelesai }) {
         id_sop: sop.id,
         status_verifikasi: statusVerifikasi,
         catatan_verifikasi: catatan.trim(),
+        verifikator: verifikatorName,
       });
       onSelesai();
     } catch (err) {
@@ -1021,7 +1052,7 @@ function SopSayaPage({ opd, onBack, onEdit, onRevisi }) {
   );
 }
 
-function VerifikasiPage({ verifikatorName, onLogout, onBack }) {
+function VerifikasiPage({ verifikatorName, onLogout, onBack, onOpenLog }) {
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1055,12 +1086,20 @@ function VerifikasiPage({ verifikatorName, onLogout, onBack }) {
             <p className="text-xs text-teal-200 mt-1">Masuk sebagai {verifikatorName}</p>
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
-            <button
-              onClick={onLogout}
-              className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 transition-colors"
-            >
-              Keluar
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onOpenLog}
+                className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 transition-colors"
+              >
+                Log Aktivitas
+              </button>
+              <button
+                onClick={onLogout}
+                className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 transition-colors"
+              >
+                Keluar
+              </button>
+            </div>
             <button
               onClick={onBack}
               className="text-xs font-medium text-teal-100 hover:text-white transition-colors"
@@ -1096,8 +1135,112 @@ function VerifikasiPage({ verifikatorName, onLogout, onBack }) {
 
         <div className="grid gap-4">
           {pending.map((sop) => (
-            <VerifikasiCard key={sop.id} sop={sop} onSelesai={load} />
+            <VerifikasiCard key={sop.id} sop={sop} verifikatorName={verifikatorName} onSelesai={load} />
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const AKSI_BADGE = {
+  "Ajukan Baru": { bg: "bg-sky-50", text: "text-sky-700" },
+  Edit: { bg: "bg-stone-100", text: "text-stone-600" },
+  Revisi: { bg: "bg-amber-50", text: "text-amber-700" },
+  Verifikasi: { bg: "bg-emerald-50", text: "text-emerald-700" },
+  "Minta Revisi": { bg: "bg-red-50", text: "text-red-700" },
+};
+
+function LogAktivitasPage({ onBack }) {
+  const [log, setLog] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const data = await apiGet("log");
+      setLog(data);
+    } catch (err) {
+      setError(err.message || "Gagal memuat log");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-stone-50">
+      <div className="bg-teal-900">
+        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
+          <div>
+            <div className="text-xs font-semibold tracking-widest uppercase text-teal-200">
+              Bagian Organisasi
+            </div>
+            <h1 className="text-xl font-bold text-white leading-none mt-1">Log Aktivitas</h1>
+            <p className="text-xs text-teal-200 mt-1">200 aktivitas terakhir</p>
+          </div>
+          <button
+            onClick={onBack}
+            className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 transition-colors shrink-0"
+          >
+            ← Kembali
+          </button>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-gray-500">
+            <strong className="text-teal-900">{log.length}</strong> aktivitas tercatat
+          </p>
+          <button
+            onClick={load}
+            className="text-xs font-semibold text-teal-800 border border-teal-800 rounded-md px-3 py-1.5 hover:bg-teal-50 transition-colors"
+          >
+            Muat ulang
+          </button>
+        </div>
+
+        {loading && <p className="text-sm text-gray-500">Memuat…</p>}
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        {!loading && log.length === 0 && !error && (
+          <div className="text-center py-20 border border-dashed border-stone-200 rounded-md">
+            <History size={28} strokeWidth={1.5} className="mx-auto text-teal-100 mb-3" />
+            <p className="text-gray-500 text-sm">Belum ada aktivitas tercatat.</p>
+          </div>
+        )}
+
+        <div className="grid gap-2">
+          {log.map((l, i) => {
+            const badge = AKSI_BADGE[l.aksi] || { bg: "bg-stone-100", text: "text-stone-600" };
+            return (
+              <div
+                key={i}
+                className="bg-white border border-stone-200 rounded-xl px-5 py-4 flex items-start justify-between gap-4"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${badge.bg} ${badge.text}`}>
+                      {l.aksi}
+                    </span>
+                    <span className="text-xs text-gray-500">oleh {l.aktor}</span>
+                  </div>
+                  <p className="text-sm font-medium text-teal-900 truncate">
+                    {l.nomor_sop ? `${l.nomor_sop} · ` : ""}
+                    {l.judul_sop || "-"}
+                  </p>
+                  {l.keterangan && <p className="text-xs text-gray-500 mt-1">{l.keterangan}</p>}
+                </div>
+                <span className="text-xs text-stone-400 shrink-0 whitespace-nowrap">{l.waktu}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -1575,8 +1718,13 @@ export default function SopPortal() {
         verifikatorName={verifikatorName}
         onLogout={handleVerifikatorLogout}
         onBack={() => setView("list")}
+        onOpenLog={() => setView("log")}
       />
     );
+  }
+
+  if (view === "log" && verifikatorName) {
+    return <LogAktivitasPage onBack={() => setView("verifikasi")} />;
   }
 
   return (
@@ -1854,10 +2002,30 @@ export default function SopPortal() {
           </section>
 
           {/* Results */}
-          <main className="max-w-4xl mx-auto px-6 py-8">
-            <div className="flex items-center gap-2 mb-3 pt-2 border-t border-stone-200">
-              <ClipboardList size={15} strokeWidth={2.2} className="text-teal-900" />
-              <h2 className="text-sm font-semibold text-teal-900">Jelajahi Semua SOP</h2>
+          <main className="max-w-4xl mx-auto px-6 py-8 print:hidden">
+            <div className="flex items-center justify-between gap-2 mb-3 pt-2 border-t border-stone-200 flex-wrap">
+              <div className="flex items-center gap-2">
+                <ClipboardList size={15} strokeWidth={2.2} className="text-teal-900" />
+                <h2 className="text-sm font-semibold text-teal-900">Jelajahi Semua SOP</h2>
+              </div>
+              {results.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => exportExcel(results)}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-900 border border-stone-200 rounded-md px-3 py-1.5 hover:border-teal-800 transition-colors"
+                  >
+                    <FileSpreadsheet size={13} strokeWidth={2.2} />
+                    Unduh Excel
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-900 border border-stone-200 rounded-md px-3 py-1.5 hover:border-teal-800 transition-colors"
+                  >
+                    <Printer size={13} strokeWidth={2.2} />
+                    Cetak PDF
+                  </button>
+                </div>
+              )}
             </div>
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -1937,6 +2105,43 @@ export default function SopPortal() {
               </>
             )}
           </main>
+
+          {/* Laporan cetak — cuma tampil pas print/PDF, disembunyikan di layar biasa */}
+          <div className="hidden print:block px-6 py-6">
+            <h1 className="text-xl font-bold text-teal-900 mb-1">Rekap SOP — Portal SOP Kabupaten Indragiri Hulu</h1>
+            <p className="text-xs text-gray-500 mb-1">
+              Dicetak: {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
+            </p>
+            <p className="text-xs text-gray-500 mb-4">
+              Filter: {opdFilter || "Semua OPD"}
+              {statusFilter ? `, Status: ${statusFilter}` : ""}
+              {onlyPerluDitinjau ? ", Hanya perlu ditinjau" : ""}
+              {" — "}
+              {results.length} SOP
+            </p>
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b-2 border-teal-900">
+                  <th className="text-left py-1.5 pr-2">Nomor</th>
+                  <th className="text-left py-1.5 pr-2">Judul</th>
+                  <th className="text-left py-1.5 pr-2">OPD</th>
+                  <th className="text-left py-1.5 pr-2">Efektif</th>
+                  <th className="text-left py-1.5 pr-2">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {results.map((s) => (
+                  <tr key={s.id} className="border-b border-stone-200">
+                    <td className="py-1.5 pr-2 font-mono">{s.nomor}</td>
+                    <td className="py-1.5 pr-2">{s.judul}</td>
+                    <td className="py-1.5 pr-2">{s.opd}</td>
+                    <td className="py-1.5 pr-2">{formatTanggal(s.tglEfektif)}</td>
+                    <td className="py-1.5 pr-2">{s.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
 
