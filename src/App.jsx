@@ -212,8 +212,33 @@ function MetaRow({ label, children, index }) {
   );
 }
 
-function SopDetailPage({ sop, isOperator, onBack, onEdit, onRevisi }) {
+function SopDetailPage({ sop, isOperator, onBack, onEdit, onRevisi, verifikasiPanel, backLabel = "Kembali ke pencarian" }) {
   const berlaku = sop.status === "Berlaku";
+  const [catatanVerifikasi, setCatatanVerifikasi] = useState("");
+  const [verifBusy, setVerifBusy] = useState(false);
+  const [verifError, setVerifError] = useState("");
+
+  const kirimVerifikasi = async (statusVerifikasi) => {
+    if (statusVerifikasi === "Revisi" && !catatanVerifikasi.trim()) {
+      setVerifError("Isi catatan dulu, biar OPD tau apa yang perlu diperbaiki");
+      return;
+    }
+    setVerifError("");
+    setVerifBusy(true);
+    try {
+      await apiPost("verifikasi", {
+        id_sop: sop.id,
+        status_verifikasi: statusVerifikasi,
+        catatan_verifikasi: catatanVerifikasi.trim(),
+        verifikator: verifikasiPanel?.verifikatorName,
+      });
+      verifikasiPanel?.onSelesai();
+    } catch (err) {
+      setVerifError(err.message || "Gagal mengirim, coba lagi.");
+      setVerifBusy(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
       <button
@@ -221,7 +246,7 @@ function SopDetailPage({ sop, isOperator, onBack, onEdit, onRevisi }) {
         className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-teal-800 transition-colors mb-5"
       >
         <ArrowLeft size={15} strokeWidth={2.2} />
-        Kembali ke pencarian
+        {backLabel}
       </button>
 
       {isOperator && (
@@ -375,6 +400,46 @@ function SopDetailPage({ sop, isOperator, onBack, onEdit, onRevisi }) {
           </span>
         </MetaRow>
       </div>
+
+      {verifikasiPanel && (
+        <div className="bg-white border border-stone-200 rounded-xl px-5 py-5 mb-5">
+          <div className="flex items-center gap-2 text-sm font-semibold text-teal-900 mb-3">
+            <ShieldCheck size={15} strokeWidth={2.2} />
+            Verifikasi
+          </div>
+          <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+            Catatan Revisi <span className="text-stone-400 font-normal">(wajib kalau minta revisi)</span>
+          </label>
+          <textarea
+            rows={3}
+            value={catatanVerifikasi}
+            onChange={(e) => setCatatanVerifikasi(e.target.value)}
+            placeholder="cth. Link Drive belum bisa diakses publik…"
+            className="w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-sm text-teal-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-800 focus:ring-opacity-30 focus:border-teal-800 resize-none"
+          />
+          {verifError && <p className="mt-2 text-xs text-red-600">{verifError}</p>}
+          <div className="mt-3 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              disabled={verifBusy}
+              onClick={() => kirimVerifikasi("Revisi")}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 border border-amber-400 rounded-md px-4 py-2 hover:bg-amber-50 transition-colors disabled:opacity-50"
+            >
+              <History size={14} strokeWidth={2.2} />
+              Revisi
+            </button>
+            <button
+              type="button"
+              disabled={verifBusy}
+              onClick={() => kirimVerifikasi("Terverifikasi")}
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-teal-800 rounded-md px-4 py-2 hover:bg-teal-700 transition-colors disabled:opacity-50"
+            >
+              <CheckCircle2 size={14} strokeWidth={2.2} />
+              Verifikasi
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -799,116 +864,33 @@ function VerifikatorLoginModal({ onClose, onLogin }) {
   );
 }
 
-function VerifikasiCard({ sop, verifikatorName, onSelesai }) {
-  const [catatan, setCatatan] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-
-  const kirim = async (statusVerifikasi) => {
-    if (statusVerifikasi === "Revisi" && !catatan.trim()) {
-      setError("Isi catatan dulu, biar OPD tau apa yang perlu diperbaiki");
-      return;
-    }
-    setError("");
-    setBusy(true);
-    try {
-      await apiPost("verifikasi", {
-        id_sop: sop.id,
-        status_verifikasi: statusVerifikasi,
-        catatan_verifikasi: catatan.trim(),
-        verifikator: verifikatorName,
-      });
-      onSelesai();
-    } catch (err) {
-      setError(err.message || "Gagal mengirim, coba lagi.");
-      setBusy(false);
-    }
-  };
-
+function PendingSopRow({ sop, onOpen }) {
   return (
-    <div className="bg-white border border-stone-200 rounded-xl p-5">
-      <div className="flex items-center gap-2 text-xs tracking-wider uppercase text-teal-800 font-semibold mb-1.5">
-        <span className="font-mono tracking-normal text-xs bg-teal-50 border border-stone-200 rounded px-1.5 py-0.5 text-teal-900">
-          {sop.nomor}
-        </span>
-        <span className="text-stone-300">·</span>
-        <span className="normal-case font-medium text-gray-500 flex items-center gap-1">
-          <Building2 size={12} strokeWidth={2} />
-          {sop.opd}
-        </span>
-      </div>
-      <h3
-        className="text-base leading-snug font-semibold text-teal-900 mb-3"
-        style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
-      >
-        {sop.judul}
-      </h3>
-
-      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs mb-4">
-        <div>
-          <dt className="text-stone-400">Bidang/Bagian</dt>
-          <dd className="text-gray-700 font-medium">{sop.bidang}</dd>
+    <button
+      onClick={onOpen}
+      className="w-full text-left bg-white border border-stone-200 rounded-xl px-5 py-4 hover:shadow-md hover:border-teal-800 transition-all flex items-center justify-between gap-4"
+    >
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 text-xs tracking-wider uppercase text-teal-800 font-semibold mb-1.5">
+          <span className="font-mono tracking-normal text-xs bg-teal-50 border border-stone-200 rounded px-1.5 py-0.5 text-teal-900">
+            {sop.nomor}
+          </span>
+          <span className="text-stone-300">·</span>
+          <span className="normal-case font-medium text-gray-500 flex items-center gap-1">
+            <Building2 size={12} strokeWidth={2} />
+            {sop.opd}
+          </span>
         </div>
-        <div>
-          <dt className="text-stone-400">Disahkan oleh</dt>
-          <dd className="text-gray-700 font-medium">{sop.disahkanOleh}</dd>
-        </div>
-        <div>
-          <dt className="text-stone-400">Tgl Efektif</dt>
-          <dd className="text-gray-700 font-medium">{formatTanggal(sop.tglEfektif)}</dd>
-        </div>
-        <div>
-          <dt className="text-stone-400">Status</dt>
-          <dd className="text-gray-700 font-medium">{sop.status}</dd>
-        </div>
-      </dl>
-
-      <a
-        href={sop.linkDrive}
-        target="_blank"
-        rel="noreferrer"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-900 border border-teal-800 rounded-md px-3 py-1.5 hover:bg-teal-50 transition-colors mb-4"
-      >
-        <Eye size={12} strokeWidth={2.2} />
-        Lihat PDF SOP
-      </a>
-
-      <div>
-        <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-          Catatan <span className="text-stone-400 font-normal">(wajib kalau minta revisi)</span>
-        </label>
-        <textarea
-          rows={2}
-          value={catatan}
-          onChange={(e) => setCatatan(e.target.value)}
-          placeholder="cth. Link Drive belum bisa diakses publik…"
-          className="w-full rounded-md border border-stone-200 bg-white px-3 py-2.5 text-sm text-teal-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-teal-800 focus:ring-opacity-30 focus:border-teal-800 resize-none"
-        />
-      </div>
-
-      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
-
-      <div className="mt-3 flex items-center justify-end gap-2">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => kirim("Revisi")}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 border border-amber-400 rounded-md px-4 py-2 hover:bg-amber-50 transition-colors disabled:opacity-50"
+        <h3
+          className="text-sm leading-snug font-semibold text-teal-900 truncate"
+          style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
         >
-          <History size={14} strokeWidth={2.2} />
-          Minta Revisi
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => kirim("Terverifikasi")}
-          className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-teal-800 rounded-md px-4 py-2 hover:bg-teal-700 transition-colors disabled:opacity-50"
-        >
-          <CheckCircle2 size={14} strokeWidth={2.2} />
-          Verifikasi
-        </button>
+          {sop.judul}
+        </h3>
+        <p className="text-xs text-stone-400 mt-1">Efektif {formatTanggal(sop.tglEfektif)} · Diajukan oleh {sop.disahkanOleh}</p>
       </div>
-    </div>
+      <ChevronDown size={16} strokeWidth={2.3} className="-rotate-90 text-stone-300 shrink-0" />
+    </button>
   );
 }
 
@@ -1056,6 +1038,7 @@ function VerifikasiPage({ verifikatorName, onLogout, onBack, onOpenLog }) {
   const [pending, setPending] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [selectedSop, setSelectedSop] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -1073,6 +1056,11 @@ function VerifikasiPage({ verifikatorName, onLogout, onBack, onOpenLog }) {
   useEffect(() => {
     load();
   }, []);
+
+  const handleSelesai = () => {
+    setSelectedSop(null);
+    load();
+  };
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -1110,35 +1098,45 @@ function VerifikasiPage({ verifikatorName, onLogout, onBack, onOpenLog }) {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-gray-500">
-            <strong className="text-teal-900">{pending.length}</strong> SOP menunggu verifikasi
-          </p>
-          <button
-            onClick={load}
-            className="text-xs font-semibold text-teal-800 border border-teal-800 rounded-md px-3 py-1.5 hover:bg-teal-50 transition-colors"
-          >
-            Muat ulang
-          </button>
-        </div>
-
-        {loading && <p className="text-sm text-gray-500">Memuat…</p>}
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        {!loading && pending.length === 0 && !error && (
-          <div className="text-center py-20 border border-dashed border-stone-200 rounded-md">
-            <CheckCircle2 size={28} strokeWidth={1.5} className="mx-auto text-teal-100 mb-3" />
-            <p className="text-gray-500 text-sm">Tidak ada SOP yang menunggu verifikasi saat ini.</p>
+      {selectedSop ? (
+        <SopDetailPage
+          sop={selectedSop}
+          isOperator={false}
+          onBack={() => setSelectedSop(null)}
+          backLabel="Kembali ke daftar verifikasi"
+          verifikasiPanel={{ verifikatorName, onSelesai: handleSelesai }}
+        />
+      ) : (
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-sm text-gray-500">
+              <strong className="text-teal-900">{pending.length}</strong> SOP menunggu verifikasi
+            </p>
+            <button
+              onClick={load}
+              className="text-xs font-semibold text-teal-800 border border-teal-800 rounded-md px-3 py-1.5 hover:bg-teal-50 transition-colors"
+            >
+              Muat ulang
+            </button>
           </div>
-        )}
 
-        <div className="grid gap-4">
-          {pending.map((sop) => (
-            <VerifikasiCard key={sop.id} sop={sop} verifikatorName={verifikatorName} onSelesai={load} />
-          ))}
+          {loading && <p className="text-sm text-gray-500">Memuat…</p>}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          {!loading && pending.length === 0 && !error && (
+            <div className="text-center py-20 border border-dashed border-stone-200 rounded-md">
+              <CheckCircle2 size={28} strokeWidth={1.5} className="mx-auto text-teal-100 mb-3" />
+              <p className="text-gray-500 text-sm">Tidak ada SOP yang menunggu verifikasi saat ini.</p>
+            </div>
+          )}
+
+          <div className="grid gap-3">
+            {pending.map((sop) => (
+              <PendingSopRow key={sop.id} sop={sop} onOpen={() => setSelectedSop(sop)} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -1607,6 +1605,19 @@ export default function SopPortal() {
     loadData();
   }, []);
 
+  // Refresh data setiap kali berpindah kembali ke halaman utama/publik,
+  // supaya data yang tampil selalu terbaru (mis. habis verifikasi/ajukan SOP)
+  const isFirstView = useRef(true);
+  useEffect(() => {
+    if (isFirstView.current) {
+      isFirstView.current = false;
+      return;
+    }
+    if (view === "list") {
+      loadData();
+    }
+  }, [view]);
+
   const openDetail = (sop) => {
     setDetailSop(sop);
     setView("detail");
@@ -1739,9 +1750,9 @@ export default function SopPortal() {
               className="shrink-0 w-12 h-12 object-contain"
             />
             <div>
-              <h1 className="text-xl font-bold text-white leading-none">Portal SOP</h1>
-              <p className="text-sm text-teal-100 mt-1">Registri Standar Operasional Prosedur</p>
-              <p className="text-xs italic text-teal-300 mt-0.5">
+              <h1 className="text-xl font-bold text-amber-400 leading-none">Portal SOP</h1>
+              <p className="text-sm italic text-teal-100 mt-1">Registri Standar Operasional Prosedur</p>
+              <p className="text-xs text-teal-300 mt-0.5">
                 Bagian Organisasi Sekretariat Daerah Kabupaten Indragiri Hulu
               </p>
             </div>
