@@ -1832,7 +1832,7 @@ export default function SopPortal() {
           </p>
 
           {/* Search bar — glassy */}
-          <div className="relative">
+          <div className="relative w-3/4">
             <Search
               size={17}
               strokeWidth={2.2}
