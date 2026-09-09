@@ -1745,7 +1745,7 @@ export default function SopPortal() {
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img
-              src="https://i.imgur.com/gsA0FLG.png"
+              src="https://i.imgur.com/4CcObZe.png"
               alt="Logo Kabupaten Indragiri Hulu"
               className="shrink-0 w-24 h-24 object-contain"
             />
