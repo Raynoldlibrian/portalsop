@@ -2172,12 +2172,12 @@ export default function SopPortal() {
         </div>
         <div className="max-w-4xl mx-auto px-6 pb-4 text-xs text-stone-300">
           <a
-            href="https://freevectormaps.com/indonesia/ID-EPS-02-7001?ref=atr"
+            href="http://www.riaudailyphoto.com/2011/03/taman-beringin-kota-rengat.html"
             target="_blank"
             rel="noreferrer"
             className="hover:text-teal-800 hover:underline transition-colors"
           >
-            Peta latar oleh FreeVectorMaps.com
+            image latar dari riaudailyphoto.com
           </a>
         </div>
       </footer>
