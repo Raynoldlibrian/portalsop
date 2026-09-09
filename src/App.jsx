@@ -1747,7 +1747,7 @@ export default function SopPortal() {
             <img
               src="https://i.imgur.com/4CcObZe.png"
               alt="Logo Kabupaten Indragiri Hulu"
-              className="shrink-0 w-24 h-24 object-contain"
+              className="shrink-0 w-20 h-20 object-contain"
             />
             <div>
               <h1 className="text-xl font-bold text-amber-400 leading-none">Portal SOP</h1>
