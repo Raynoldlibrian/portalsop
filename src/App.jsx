@@ -1745,9 +1745,9 @@ export default function SopPortal() {
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
           <div className="flex items-stretch gap-3">
             <img
-              src="/logo-portal-sop.png"
-              alt="Logo Portal SOP"
-              className="shrink-0 h-24 w-auto object-contain"
+              src="https://i.imgur.com/4CcObZe.png"
+              alt="Logo portal sop"
+              className="shrink-0 w-20 h-20 object-contain"
             />
             <div>
               <h1 className="text-xl font-bold text-amber-400 leading-none">Portal SOP</h1>
