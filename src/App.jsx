@@ -1743,11 +1743,11 @@ export default function SopPortal() {
       {/* Header — teal bar with logo lockup, matching Patuhdiri/MANDALA branding */}
       <div className="bg-teal-900">
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
-          <div className="flex items-stretch gap-3">
+          <div className="flex items-start gap-3">
             <img
               src="/logo-portal-sop.png"
               alt="Logo Portal SOP"
-              className="shrink-0 h-20 w-auto object-contain"
+              className="shrink-0 h-16 w-auto object-contain"
             />
             <div>
               <h1 className="text-xl font-bold text-amber-400 leading-none">Portal SOP</h1>
