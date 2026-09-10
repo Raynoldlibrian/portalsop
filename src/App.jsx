@@ -1747,7 +1747,7 @@ export default function SopPortal() {
             <img
               src="/logo-portal-sop.png"
               alt="Logo Portal SOP"
-              className="shrink-0 h-full w-auto object-contain"
+              className="shrink-0 h-16 w-auto object-contain"
             />
             <div>
               <h1 className="text-xl font-bold text-amber-400 leading-none">Portal SOP</h1>
