@@ -1803,7 +1803,7 @@ export default function SopPortal() {
       )}
 
       {view === "list" && (
-      <header className="relative border-b border-stone-200 bg-teal-900 min-h-[460px]">
+      <header className="relative border-b border-stone-200 bg-teal-900 min-h-[420px]">
         <div className="absolute inset-0 overflow-hidden">
           {/* Background hero — foto Menara Air (rasio panjang, sudah menyatu dengan teal) */}
           <img
