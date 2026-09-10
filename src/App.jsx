@@ -1743,11 +1743,11 @@ export default function SopPortal() {
       {/* Header — teal bar with logo lockup, matching Patuhdiri/MANDALA branding */}
       <div className="bg-teal-900">
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-stretch gap-3">
             <img
-              src="https://i.imgur.com/jk45oWc.png"
-              alt="Logo Kabupaten Indragiri Hulu"
-              className="shrink-0 w-12 h-12 object-contain"
+              src="/logo-portal-sop.png"
+              alt="Logo Portal SOP"
+              className="shrink-0 h-full w-auto object-contain"
             />
             <div>
               <h1 className="text-xl font-bold text-amber-400 leading-none">Portal SOP</h1>
@@ -1813,7 +1813,7 @@ export default function SopPortal() {
           />
         </div>
 
-        <div className="relative max-w-4xl mx-auto px-6 pt-6 pb-6">
+        <div className="relative max-w-4xl mx-auto px-6 pt-10 pb-8">
           <h1
             className="text-3xl sm:text-4xl leading-none font-semibold text-white mb-2"
             style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
