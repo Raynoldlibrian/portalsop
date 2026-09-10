@@ -1745,9 +1745,9 @@ export default function SopPortal() {
         <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img
-              src="https://i.imgur.com/4CcObZe.png"
+              src="https://i.imgur.com/jk45oWc.png"
               alt="Logo Kabupaten Indragiri Hulu"
-              className="shrink-0 w-20 h-20 object-contain"
+              className="shrink-0 w-12 h-12 object-contain"
             />
             <div>
               <h1 className="text-xl font-bold text-amber-400 leading-none">Portal SOP</h1>
@@ -1760,12 +1760,6 @@ export default function SopPortal() {
           {loggedInOpd ? (
             <div className="flex flex-col items-end gap-2 shrink-0">
               <div className="flex items-center gap-2 flex-wrap justify-end">
-                <button
-                  onClick={() => setView("sopsaya")}
-                  className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 whitespace-nowrap transition-colors"
-                >
-                  SOP Saya
-                </button>
                 <button
                   onClick={handleLogout}
                   className="text-xs font-medium text-teal-100 bg-white bg-opacity-10 hover:bg-opacity-20 rounded-full px-3 py-1.5 whitespace-nowrap transition-colors"
@@ -1897,15 +1891,23 @@ export default function SopPortal() {
               </button>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
               {loggedInOpd && (
-                <button
-                  onClick={openTambah}
-                  className="inline-flex items-center gap-2 bg-teal-800 text-white font-semibold text-sm px-4 py-2 rounded-md hover:bg-teal-700 transition-colors"
-                >
-                  <Plus size={16} />
-                  Ajukan SOP Baru
-                </button>
+                <>
+                  <button
+                    onClick={() => setView("sopsaya")}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-white border border-white border-opacity-20 rounded-md px-4 py-2 bg-white bg-opacity-10 backdrop-blur-md hover:bg-opacity-20 transition-colors"
+                  >
+                    SOP Saya
+                  </button>
+                  <button
+                    onClick={openTambah}
+                    className="inline-flex items-center gap-2 bg-teal-800 text-white font-semibold text-sm px-4 py-2 rounded-md hover:bg-teal-700 transition-colors"
+                  >
+                    <Plus size={16} />
+                    Ajukan SOP Baru
+                  </button>
+                </>
               )}
             </div>
 
@@ -2172,12 +2174,12 @@ export default function SopPortal() {
         </div>
         <div className="max-w-4xl mx-auto px-6 pb-4 text-xs text-stone-300">
           <a
-            href="http://www.riaudailyphoto.com/2011/03/taman-beringin-kota-rengat.html"
+            href="https://freevectormaps.com/indonesia/ID-EPS-02-7001?ref=atr"
             target="_blank"
             rel="noreferrer"
             className="hover:text-teal-800 hover:underline transition-colors"
           >
-            image latar dari riaudailyphoto.com
+            Peta latar oleh FreeVectorMaps.com
           </a>
         </div>
       </footer>
