@@ -1819,7 +1819,7 @@ export default function SopPortal() {
           />
         </div>
 
-        <div className="relative max-w-4xl mx-auto px-6 pt-10 pb-8">
+        <div className="relative max-w-3xl mx-auto px-6 pt-10 pb-8">
           <h1
             className="text-3xl sm:text-4xl leading-none font-semibold text-white mb-2"
             style={{ fontFamily: "'Source Serif 4', Georgia, serif" }}
